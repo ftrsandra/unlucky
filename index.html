@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>有求不應｜幸運抽籤</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family:
+        "Noto Sans TC",
+        "Microsoft JhengHei",
+        Arial,
+        sans-serif;
+    background:
+        radial-gradient(circle at 50% 20%, #ef3c24 0%, #c8170e 45%, #8e0808 100%);
+    color: #fff;
+    overflow-x: hidden;
+}
+
+/* =========================
+   背景裝飾
+========================= */
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .12;
+    background-image:
+        repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 12px,
+            #ffd45a 13px,
+            transparent 14px
+        ),
+        repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 12px,
+            #ffd45a 13px,
+            transparent 14px
+        );
+}
+
+/* =========================
+   主容器
+========================= */
+
+.game {
+    width: 100%;
+    max-width: 1100px;
+    margin: auto;
+    padding: 25px 20px 60px;
+    text-align: center;
+    position: relative;
+}
+
+/* =========================
+   頂部
+========================= */
+
+.brand {
+    font-size: 20px;
+    font-weight: bold;
+    color: #ffd85a;
+    letter-spacing: 5px;
+    margin-top: 10px;
+}
+
+.title {
+    margin: 10px auto 0;
+    font-size: clamp(48px, 8vw, 90px);
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: 10px;
+    color: #fff;
+    text-shadow:
+        0 5px 0 #9b130d,
+        0 8px 15px rgba(0,0,0,.35);
+}
+
+.subtitle {
+    margin-top: 20px;
+    font-size: clamp(20px, 3vw, 34px);
+    font-weight: 900;
+    color: #ffd437;
+    text-shadow: 2px 3px 0 #8c1008;
+}
+
+.description {
+    margin-top: 8px;
+    color: #ffe7a1;
+    font-size: 16px;
+}
+
+/* =========================
+   金元寶
+========================= */
+
+.gold {
+    position: absolute;
+    width: 85px;
+    height: 48px;
+    background: linear-gradient(#ffd95a, #f5a900);
+    border-radius: 50% 50% 45% 45%;
+    border: 4px solid #c98200;
+    box-shadow: 0 5px 10px rgba(0,0,0,.25);
+}
+
+.gold::after {
+    content: "福";
+    color: #bd6900;
+    font-size: 25px;
+    font-weight: bold;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.gold.left {
+    left: 25px;
+    bottom: 130px;
+    transform: rotate(-12deg);
+}
+
+.gold.right {
+    right: 25px;
+    bottom: 170px;
+    transform: rotate(12deg);
+}
+
+/* =========================
+   抽籤區
+========================= */
+
+.draw-area {
+    width: 100%;
+    max-width: 850px;
+    margin: 45px auto 0;
+    position: relative;
+    min-height: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+/* 籤桶 */
+
+.bucket {
+    position: absolute;
+    bottom: 0;
+    width: 390px;
+    height: 245px;
+    background:
+        linear-gradient(
+            90deg,
+            #9c300e,
+            #c84d13 20%,
+            #a42e0c 50%,
+            #c84d13 80%,
+            #8e250b
+        );
+    border-radius: 15px 15px 50px 50px;
+    border: 5px solid #7c1d08;
+    box-shadow: 0 20px 30px rgba(0,0,0,.35);
+    z-index: 5;
+}
+
+.bucket::before {
+    content: "";
+    position: absolute;
+    top: -15px;
+    left: -15px;
+    width: calc(100% + 30px);
+    height: 55px;
+    border-radius: 50%;
+    background: linear-gradient(#ffd83e, #dc8d08);
+    border: 5px solid #b96800;
+    box-shadow: 0 5px 10px rgba(0,0,0,.25);
+}
+
+.bucket::after {
+    content: "福";
+    position: absolute;
+    left: 50%;
+    top: 60%;
+    transform: translate(-50%, -50%);
+    font-size: 95px;
+    font-weight: 900;
+    color: rgba(255,210,70,.25);
+}
+
+/* =========================
+   籤
+========================= */
+
+.sticks {
+    position: absolute;
+    bottom: 150px;
+    width: 650px;
+    height: 330px;
+    z-index: 4;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.stick {
+    position: relative;
+    width: 62px;
+    height: 280px;
+    margin: 0 -8px;
+    cursor: pointer;
+    transform-origin: bottom center;
+    transition:
+        transform .35s ease,
+        filter .25s ease;
+    filter: drop-shadow(3px 5px 4px rgba(0,0,0,.3));
+}
+
+.stick:hover {
+    transform: translateY(-18px) rotate(2deg);
+    filter: brightness(1.08) drop-shadow(5px 8px 6px rgba(0,0,0,.35));
+}
+
+.stick.disabled {
+    cursor: default;
+    pointer-events: none;
+}
+
+.stick.drawn {
+    animation: drawStick 1.1s forwards;
+}
+
+@keyframes drawStick {
+    0% {
+        transform: translateY(0) rotate(0);
+    }
+
+    45% {
+        transform: translateY(-180px) rotate(-8deg);
+    }
+
+    100% {
+        transform:
+            translateY(-400px)
+            translateX(280px)
+            rotate(18deg);
+        opacity: 0;
+    }
+}
+
+/* 籤木 */
+
+.stick-body {
+    position: absolute;
+    left: 10px;
+    bottom: 0;
+    width: 42px;
+    height: 245px;
+    background:
+        linear-gradient(
+            90deg,
+            #c98b42,
+            #ffe2a1 25%,
+            #fff0bf 50%,
+            #d19a4e 80%
+        );
+    border: 2px solid #b47b37;
+    border-radius: 4px;
+}
+
+/* 籤頭 */
+
+.stick-head {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 62px;
+    height: 65px;
+    background:
+        linear-gradient(
+            135deg,
+            #fff0bf,
+            #d9a85e
+        );
+    clip-path: polygon(
+        50% 0,
+        100% 32%,
+        100% 100%,
+        0 100%,
+        0 32%
+    );
+    border: 2px solid #b47b37;
+}
+
+.stick-number {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #a21c0d;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+/* 籤上的字 */
+
+.stick-text {
+    position: absolute;
+    top: 75px;
+    left: 50%;
+    transform: translateX(-50%);
+    writing-mode: vertical-rl;
+    color: #9d160b;
+    font-weight: 900;
+    font-size: 16px;
+    letter-spacing: 3px;
+    white-space: nowrap;
+}
+
+/* 不同角度 */
+
+.stick:nth-child(1) { transform: rotate(-18deg); }
+.stick:nth-child(2) { transform: rotate(-13deg); }
+.stick:nth-child(3) { transform: rotate(-9deg); }
+.stick:nth-child(4) { transform: rotate(-6deg); }
+.stick:nth-child(5) { transform: rotate(-3deg); }
+.stick:nth-child(6) { transform: rotate(0deg); }
+.stick:nth-child(7) { transform: rotate(3deg); }
+.stick:nth-child(8) { transform: rotate(6deg); }
+.stick:nth-child(9) { transform: rotate(9deg); }
+.stick:nth-child(10) { transform: rotate(13deg); }
+.stick:nth-child(11) { transform: rotate(18deg); }
+
+/* =========================
+   提示
+========================= */
+
+.hint {
+    margin-top: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffe59b;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%,100% { opacity: .6; }
+    50% { opacity: 1; }
+}
+
+/* =========================
+   獎賞
+========================= */
+
+.prizes {
+    margin: 55px auto 0;
+    max-width: 900px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.prize {
+    padding: 18px 10px;
+    background: rgba(122,0,0,.55);
+    border: 2px solid #e99b19;
+    box-shadow: inset 0 0 0 2px rgba(255,210,80,.12);
+}
+
+.prize .name {
+    color: #ffd638;
+    font-size: 21px;
+    font-weight: 900;
+}
+
+.prize .amount {
+    margin-top: 5px;
+    color: #fff;
+    font-size: 24px;
+    font-weight: 900;
+}
+
+/* =========================
+   Modal
+========================= */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(70,0,0,.82);
+    backdrop-filter: blur(5px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-box {
+    width: min(90%, 520px);
+    padding: 45px 30px;
+    border-radius: 20px;
+    border: 5px solid #f5bc27;
+    background:
+        radial-gradient(circle at top, #e72a16, #990a08);
+    box-shadow:
+        0 25px 60px rgba(0,0,0,.55),
+        inset 0 0 30px rgba(255,200,50,.15);
+    animation: pop .5s ease;
+}
+
+@keyframes pop {
+    0% {
+        transform: scale(.5);
+        opacity: 0;
+    }
+    70% {
+        transform: scale(1.08);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-small {
+    font-size: 22px;
+    color: #ffe7a0;
+}
+
+.modal-title {
+    margin: 8px 0;
+    font-size: 34px;
+    color: #ffd738;
+    font-weight: 900;
+}
+
+.modal-prize {
+    margin: 10px 0 20px;
+    font-size: 20px;
+    font-weight: 900;
+    color: #fff;
+}
+
+.modal-text {
+    font-size: 18px;
+    color: #ffe7ae;
+}
+
+.modal-button {
+    margin-top: 25px;
+    padding: 15px 45px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(#ffd83e, #e99609);
+    color: #8d1b08;
+    font-size: 20px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 5px 12px rgba(0,0,0,.3);
+}
+
+.modal-button:hover {
+    transform: scale(1.05);
+}
+
+/* =========================
+   重置按鈕
+========================= */
+
+.reset {
+    margin-top: 30px;
+    padding: 10px 25px;
+    border: 1px solid rgba(255,220,130,.5);
+    border-radius: 30px;
+    background: rgba(100,0,0,.35);
+    color: #ffe9ad;
+    cursor: pointer;
+}
+
+/* =========================
+   手機
+========================= */
+
+@media (max-width: 700px) {
+
+    .game {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .brand {
+        font-size: 16px;
+    }
+
+    .title {
+        letter-spacing: 3px;
+    }
+
+    .draw-area {
+        transform: scale(.78);
+        transform-origin: top center;
+        margin-bottom: -80px;
+    }
+
+    .sticks {
+        width: 600px;
+    }
+
+    .bucket {
+        width: 360px;
+    }
+
+    .prizes {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .gold {
+        display: none;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="game">
+
+    <div class="brand">你今日抽左味</div>
+
+    <div class="title">
+        有求考慮下應
+    </div>
+
+    <div class="subtitle">
+        幸運與否，由你話事～（不保證）
+    </div>
+
+    <div class="description">
+        每人每日限抽1次・立即抽！
+    </div>
+
+
+    <!-- 金元寶裝飾 -->
+    <div class="gold left"></div>
+    <div class="gold right"></div>
+
+
+    <!-- 抽籤區 -->
+    <div class="draw-area">
+
+        <div class="sticks" id="sticks">
+
+            <!-- 11 支籤 -->
+            <div class="stick">
+                <div class="stick-body"></div>
+                <div class="stick-head"></div>
+                <div class="stick-number">𖣘</div>
+                <div class="stick-text">你估下～</div>
+            </div>
+
+            <div class="stick">
+                <div class="stick-body"></div>
+                <div class="stick-head"></div>
+                <div class="stick-number">𖣘</div>
+                <div class="stick-text">係我呀！</div>
+            </div>
+
+            <div class="stick">
+                <div class="stick-body"></div>
+                <div class="stick-head"></div>
+                <div class="stick-number">𖣘</div>
+                <div class="stick-text">抽我吧！</div>
+            </div>
+
+            <div class="stick">
+                <div class="stick-body"></div>
+                <div class="stick-head"></div>
+                <div class="stick-number">𖣘</div>
+                <div class="stick-text">狠狠地～</div>
+            </div>
+
+            <div class="stick">
+                <div class="stick-body"></div>
+                <div class="stick-head"></div>
+                <div class="stick-number">𖣘</div>
+                <div class="stick-text">呢度呢度！</div>
+            </div>
+
+            <div class="stick">
+                <div class="stick-body"></div>
+                <div class="stick-head"></div>
+                <div class="stick-number">𖣘</div>
+                <div class="stick-text">呢度呀！</div>
+            </div>
+
+            <div class="stick">
+                <div class="stick-body"></div>
+                <div class="stick-head"></div>
+                <div class="stick-number">𖣘</div>
+                <div class="stick-text">唔係我～</div>
+            </div>
+
+            <div class="stick">
+                <div class="stick-body"></div>
+                <div class="stick-head"></div>
+                <div class="stick-number">𖣘</div>
+                <div class="stick-text">沉睡中的籤</div>
+            </div>
+
+            <div class="stick">
+                <div class="stick-body"></div>
+                <div class="stick-head"></div>
+                <div class="stick-number">𖣘</div>
+                <div class="stick-text">Touch me</div>
+            </div>
+
+            <div class="stick">
+                <div class="stick-body"></div>
+                <div class="stick-head"></div>
+                <div class="stick-number">𖣘</div>
+                <div class="stick-text">盡情愚弄我吧</div>
+            </div>
+
+           
+
+        </div>
+
+
+        <!-- 籤桶 -->
+        <div class="bucket"></div>
+
+    </div>
+
+
+    <div class="hint">
+        👆 點擊任意一支籤籤
+    </div>
+
+
+  
+
+
+    <button class="reset" onclick="resetGame()">
+        重新開始
+    </button>
+
+</div>
+
+
+<!-- =========================
+     中獎 Modal
+========================= -->
+
+<div class="modal" id="modal">
+
+    <div class="modal-box">
+
+        <div class="modal-small">
+            🎊 恭喜你！
+        </div>
+
+        <div class="modal-title">
+            你得到了(*≧ω≦)
+        </div>
+
+        <div class="modal-prize" id="prize">
+            老公係車銀優
+        </div>
+
+        <div class="modal-text" id="prizeType">
+            大吉籤
+        </div>
+
+        <button class="modal-button" onclick="closeModal()">
+            收啦(❁´◡`❁)
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =========================
+   獎品設定
+========================= */
+
+const prizes = [
+    {
+        type: "【大吉籤】",
+        amount: "鍵盤發洩體驗券 ⌨️ 可對鍵盤進行一次合法、合規、適度發洩。"
+    },
+    {
+        type: "【上上籤】",
+        amount: "獲得OT免死金牌 🛡️ 今日準時收工，任何人不得阻止。"
+    },
+    {
+        type: "【幸福籤】",
+        amount: "屎Break VIP通行證 🚽 廁所即日起係你的私人休息室。"
+    },
+    {
+        type: "【幸運籤】",
+        amount: "釣魚專員認證書 🐟 正式認證你今日有權合法釣魚30分鐘。"
+    },
+    {
+        type: "【人妻籤】",
+        amount: "車銀優享用權 👨 正式認證你係車銀優太太1秒。"
+    },
+    {
+        type: "【戰士籤】",
+        amount: "Keyboard發洩體驗券 ⌨️ 可對Keyboard進行一次合法、合規、適度發洩dadada。"
+    },
+    {
+        type: "【大好籤】",
+        amount: "「我聽日先做」護身符 🧿 今日所有Deadline自動順延24小時。"
+    },
+    {
+        type: "【走佬籤】",
+        amount: "馬上收工券 ⌨️ 而家即刻離開公司。"
+    }
+];
+
+
+/* =========================
+   選取所有籤
+========================= */
+
+const sticks = document.querySelectorAll(".stick");
+
+let gameOver = false;
+
+
+/* =========================
+   點擊抽籤
+========================= */
+
+sticks.forEach((stick) => {
+
+    stick.addEventListener("click", function () {
+
+        if (gameOver) {
+            return;
+        }
+
+        gameOver = true;
+
+        /* 隨機獎品 */
+        const randomPrize =
+            prizes[Math.floor(Math.random() * prizes.length)];
+
+        /* 抽出動畫 */
+        this.classList.add("drawn");
+        this.classList.add("disabled");
+
+        /* 其他籤全部鎖定 */
+        sticks.forEach(s => {
+            s.classList.add("disabled");
+        });
+
+        /* 等待動畫完成 */
+        setTimeout(() => {
+
+            document.getElementById("prize").textContent =
+                randomPrize.amount;
+
+            document.getElementById("prizeType").textContent =
+                randomPrize.type;
+
+            document.getElementById("modal")
+                .classList.add("show");
+
+        }, 850);
+
+    });
+
+});
+
+
+/* =========================
+   關閉結果
+========================= */
+
+function closeModal() {
+
+    document.getElementById("modal")
+        .classList.remove("show");
+
+}
+
+
+/* =========================
+   重新開始
+========================= */
+
+function resetGame() {
+
+    gameOver = false;
+
+    sticks.forEach(stick => {
+
+        stick.classList.remove("drawn");
+        stick.classList.remove("disabled");
+
+    });
+
+    closeModal();
+
+}
+
+</script>
+
+</body>
+</html>
